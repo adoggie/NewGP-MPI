@@ -1,0 +1,119 @@
+
+c++ 并行开发
+https://www.bookstack.cn/read/CPP-Concurrency-In-Action-2ed-2019/README.md
+
+
+OpenBLAS
+https://en.wikipedia.org/wiki/OpenBLAS
+https://www.openblas.net/
+http://netlib.org/blas/    reference/api
+
+OpenMp
+https://www.openmp.org/
+
+
+MKL
+https://software.intel.com/content/www/us/en/develop/documentation/oneapi-mkl-dpcpp-developer-reference/top/blas-and-sparse-blas-routines/blas-level-1-routines-and-functions.html#blas-level-1-routines-and-functions
+
+
+boost book
+https://www.bookstack.cn/read/theboostcpplibraries/ead1c8451065463e.md
+
+
+C11 参考 IEEE 754
+https://en.cppreference.com/w/cpp/types/numeric_limits/quiet_NaN
+
+
+C++11可变模版参数的妙用
+https://www.cnblogs.com/qicosmos/p/4325949.html
+
+template <class... T>
+void f(T... args);
+
+std::forward
+https://www.cnblogs.com/rayfloyd/p/14309276.html
+
+函数模板 void G(A &&a)内部是无法知道形参对应的实参，到底是个普通变量，还是濒死的临时变量？
+只能原封不动的完美的转发std::forward给函数模板 void G(A &&a)调用的下一层函数。
+所以，std::forward转发问题针对的是模板函数。
+
+parquet
+https://github.com/apache/parquet-cpp
+https://arrow.apache.org/install/
+
+https://github.com/apache/parquet-format
+
+arrow  就用这个 tabluar 了 
+https://arrow.apache.org/install/
+https://arrow.apache.org/docs/cpp/
+https://arrow.apache.org/docs/python/api/compute.html
+
+编译arrow
+https://arrow.apache.org/docs/developers/cpp/building.html#building
+
+boost 的rolling
+https://cppsecrets.com/users/7921071111109710097115117110105116975364103109971051084699111109/C00-boostaccumulatorrolling-mean.php
+
+c17并行支持，安装库
+apt install libtbb-dev
+brew install tbb
+安装 libboost1.71
+apt-cache search xxx 
+
+DataFrame C++ 版本
+https://github.com/hosseinmoein/DataFrame
+
+Numpy ， NumCpp
+https://github.com/dpilger26/NumCpp
+https://dpilger26.github.io/NumCpp/doxygen/html/index.html
+
+xmlstarlet
+http://xmlstar.sourceforge.net/download.php
+apt-get install xmlstarlet graphviz
+
+xml viewer 
+https://codebeautify.org/xmlviewer
+
+xml 转成dot
+https://github.com/TomConlin/xpath2dot
+
+https://github.com/splodginald/MPI-PACC-OpenBeagle
+
+https://github.com/splodginald/MPI-PACC-OpenBeagle/tree/master/OpenBEAGLE-4.0.0-alpha2-Source/examples/symbreg
+
+
+https://github.com/atopuzov/gp-market-trading
+
+
+https://github.com/Arash-codedev/openGA
+
+
+遺傳算法
+http://www.technical-recipes.com/category/genetic-algorithms/
+
+https://softwarerecs.narkive.tw/gvsJjRgg/c-c
+
+
+
+用遗传算法寻找函数的最大值
+https://zhuanlan.zhihu.com/p/31883233
+
+
+MPI ( Message Passing Interface) 
+https://blog.csdn.net/wangjianno2/article/details/52050884
+
+
+GP:   genetic programming
+
+python 版本的遗传进化开发
+https://gplearn.readthedocs.io/en/stable/intro.html
+
+crossover :交叉配对
+mutation ： 变异
+
+符号回归
+https://zhuanlan.zhihu.com/p/31185882
+
+
+一个开源的简单量化工具 c++
+https://bitbucket.org/quanttools/quanttools/src/master/

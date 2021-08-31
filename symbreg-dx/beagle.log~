@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<Beagle version="4.0.0-alpha2">
+  <Logger>
+    <Log>Open BEAGLE, version 4.0.0-alpha2</Log>
+    <Log>Setting console log level 2</Log>
+    <Log>Setting file log level 3</Log>
+    <Log>Logging to file 'beagle.log'</Log>
+    <Log>Reading file 'beagle.conf' for evolver configuration</Log>
+    <Log>Reading file 'beagle.conf' for system configuration</Log>
+    <Log>WARNING: file does not contain any valid system</Log>
+    <Log>Randomizer seed used: 16639673436059948869</Log>
+    <Log>Starting an evolution</Log>
+    <Log>Current date and time: 01:12:06 27 Aug 2021</Log>
+    <Log>Evolving generation 0</Log>
+    <Log>Applying bootstrap operators to the 1st deme</Log>
