@@ -1,0 +1,3 @@
+gcc -pthread -B /home/eladmin/anaconda3/compiler_compat -Wl,--sysroot=/ -Wsign-compare -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes -fPIC
+-I/home/eladmin/anaconda3/lib/python3.8/site-packages/numpy/core/include
+-I/home/eladmin/anaconda3/include/python3.8 -c nyex.c -o build/temp.linux-x86_64-3.8/nyex.o
