@@ -1,0 +1,4 @@
+rm -rf build *.so ;
+gcc -pthread -B /home/eladmin/anaconda3/compiler_compat -Wl,--sysroot=/ -Wsign-compare -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes -fPIC                  -DNPY_NO_DEPRECATED_API=1 -I/home/eladmin/.local/lib/python3.8/site-packages/numpy/core/include -I/home/eladmin/anaconda3/include/python3.8 -                 c nyexf-par-py3.c -o build/temp.linux-x86_64-3.8/nyexf-par-py3.o
+
+gcc -pthread -shared -B /home/eladmin/anaconda3/compiler_compat -L/home/eladmin/anaconda3/lib -Wl,-rpath=/home/eladmin/anaconda3/lib -Wl,--no-                 as-needed -Wl,--sysroot=/ build/temp.linux-x86_64-3.8/nyexf-par-py3.o -o /mnt/sda1/data/PandasBetter/nyex/nyex.cpython-38-x86_64-linux-gnu.so

@@ -12,7 +12,7 @@ python 2.x
 pip install pyarrow fastparquet==0.2.1
 """
 
-df = pd.read_parquet("/home/eladmin/projects/highprice.parquet").astype('float32')
+df = pd.read_parquet("/home/eladmin/projects/highprice1.parquet").astype('float32')
 print(df.shape)
 print(df['000001.XSHE'].dtypes)
 
@@ -27,21 +27,23 @@ print(df['000001.XSHE'].dtypes)
 print('--')
 
 
-def test_par():
+def test_par(winsize=100,loop=1):
     start = time.time()
-    ret = df.rolling(100).mean()
+    for _ in range(loop):
+        ret = df.rolling(winsize).mean()
     end = time.time()
-    print('elapsed:', end - start)
+    print('test_par elapsed:', end - start)
     # print ret.values,ret.shape
-    print(ret.values)
+    # print(ret.values)
 
-def test_nyex():
+def test_nyex(winsize=100,par=0,loop=1):
     arr = df.values
     start = time.time()
-    ret =nyex.example( arr )
+    for _ in range(loop):
+        ret =nyex.example( arr,winsize,par )
     end = time.time()
-    print('elapsed:', end - start)
-    print(ret,ret.shape)
+    print('test_nyex elapsed:', end - start)
+    # print(ret,ret.shape)
     # print(arr[0,:])
     # print '---'
     # print ret,ret.shape

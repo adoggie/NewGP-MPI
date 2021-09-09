@@ -55,11 +55,11 @@ void rolling_mean(PyArrayObject *a,PyArrayObject*b ,uint64_t col,unsigned long w
         }
 
         W = (float*)PyArray_GETPTR2(b, it,col);
-        W = (float*)(b->data + offset);
+//        W = (float*)(b->data + offset);
 //        W = (float*)(global_buff + offset);
         *W =  sum /(float)size;  // expensive write cost
         it++;
-
+//        printf("%d,%f\n",it,*v);
     }
 }
 
@@ -74,23 +74,28 @@ example (PyObject *dummy, PyObject *args)
     int nd;
     printf("-- start .. \n");
 //    return PyLong_FromLong(111);
-    if (!PyArg_ParseTuple(args, "O", &arg1))
-        return NULL;
+    if (!PyArg_ParseTuple(args, "O", &arg1)) {
+        printf("ERROR: PyArg_ParseTuple Fail .\n");
+        return PyLong_FromLong(0);
+    }
 
-
-    arr1 = PyArray_FROM_OTF(arg1, NPY_FLOAT, NPY_IN_ARRAY);
+    printf("STEP.1\n");
+//    arr1 = PyArray_FROM_OTF(arg1, NPY_FLOAT, NPY_IN_ARRAY);
+    arr1 = PyArray_FROM_O(arg1);
 //    arr2 = PyArray_FROM_OTF(arg2, NPY_float, NPY_IN_ARRAY);
-    if (arr1 == NULL)
-        return NULL;
+    if (arr1 == NULL) {
+        printf("-- ERROR: arr1 is NULL .\n");
+        return PyLong_FromLong(0);
+    }
 
     size[0] = arr1->dimensions[0];
     size[1] = arr1->dimensions[1];
-
+    printf("STEP.2\n");
     PyArrayObject *ret;
     ret = PyArray_SimpleNew(2,size,NPY_FLOAT);
 
     uint64_t  datasize = size[0] * size[1] * sizeof(float );
-    global_buff = malloc( datasize);
+//    global_buff = malloc( datasize);
 
     uint64_t win_size = 100;
     printf("D1: %d , D2: %d , WIN:%d \n",arr1->dimensions[0],arr1->dimensions[1],win_size);
@@ -101,6 +106,7 @@ example (PyObject *dummy, PyObject *args)
     PyArrayObject *a = arr1;
     PyArrayObject *b = ret;
 //    return ret;
+    printf("STEP.3\n");
     for (int i=0; i<arr1->dimensions[1]; ++i) {
         rolling_mean(a,b,i,win_size);
 

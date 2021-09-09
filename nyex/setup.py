@@ -5,7 +5,20 @@ from distutils.core import setup, Extension
 import numpy as np
 
 # https://blog.csdn.net/wuxianfeng1987/article/details/77175612
-ext_modules = [ Extension('nyex', sources = ['nyexf-par-py3.c'] ,define_macros=[('NPY_NO_DEPRECATED_API','1')]) ]
+ext_modules = [ Extension('nyex', sources = ['nyex-main-py3.cpp'] ,define_macros=[('NPY_NO_DEPRECATED_API','1')],
+                          libraries=['tbb'],library_dirs=['/usr/local/lib', '/usr/lib/x86_64-linux-gnu'],
+                          extra_compile_args=['-std=c++17']
+                          ) ]
+# ext_modules = [ Extension('nyex', sources = ['nyexf-par-py3.c'] ,define_macros=[('NPY_NO_DEPRECATED_API','1')]) ]
+
+
+# module1 = Extension('demo',
+#                     define_macros = [('MAJOR_VERSION', '1'),
+#                                      ('MINOR_VERSION', '0')],
+#                     include_dirs = ['/usr/local/include'],
+#                     libraries = ['tcl83'],
+#                     library_dirs = ['/usr/local/lib'],
+#                     sources = ['demo.c'])
 
 setup(
     name = 'nyex',
