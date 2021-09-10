@@ -11,7 +11,9 @@
 //#include <execution>
 #include <iostream>
 #include <vector>
+#include <list>
 #include <utility>
+#include <boost/circular_buffer.hpp>
 
 namespace el {
 
@@ -202,10 +204,112 @@ namespace el {
 
     }
 
+    // https://www.johndcook.com/blog/standard_deviation/
+    //        https://www.it-swarm.cn/zh/algorithm/%E6%BB%9A%E5%8A%A8%E6%96%B9%E5%B7%AE%E7%AE%97%E6%B3%95/971899514/
+        class RunningStat
+        {
+            public:
+            RunningStat(uint32_t win_size) : win_size_(win_size),
+            windows_(win_size){
+
+            }
+
+            uint32_t n = 0;
+            float mean = 0;
+            float run_var = 0;
+            uint32_t win_size_ = 0;
 
 
+            boost::circular_buffer<float> windows_;
+
+            void clear(){
+                this->n = 0;
+//                this.windows_.clear();
+            }
+
+            /*
+             * Initialize M1 = x1 and S1 = 0.
+                Mk = Mk-1+ (xk – Mk-1)/k
+                Sk = Sk-1 + (xk – Mk-1)*(xk – Mk).
+                For 2 ≤ k ≤ n, the kth estimate of the variance is s2 = Sk/(k – 1).
+             */
+
+            void push(float x) {
+                float x_removed = this->windows_[0];
+                this->windows_.push_back(x);
+
+                if (this->n <= this->win_size_) {
+                    //# Calculating first variance
+                    this->n += 1;
+                    float delta = x - this->mean;
+                    this->mean += delta / this->n;
+//                    this->run_var += delta * (x - this->mean);
+                    this->run_var += delta * delta;
+                } else {
+//# Adjusting variance
+//                float x_removed = self.windows.popleft()
+                    float old_m = this->mean;
+                    this->mean += (x - x_removed) / this->win_size_;
+//                    this->run_var += (x + x_removed - old_m - this->mean) * (x - x_removed);
+
+//                    accVar += (observation - prevMean) * (observation - mean) - (then - prevMean) * (then - mean);
+                    this->run_var += (x - old_m) *(x - this->mean) - ( x_removed - old_m)*(x_removed - this->mean);
+                }
+            }
+
+            float get_mean() {
+                if(this->n){
+                    return this->mean;
+                }
+                return 0;
+            }
+
+            float get_var() {
+                if(this->n > 1){
+                    return this->run_var / (this->win_size_ -1);
+                }
+                return 0;
+            }
+
+            float get_std() {
+                return std::sqrt(this->get_var());
+            }
+        };
 
         void rolling_mean(PyArrayObject *a,PyArrayObject*b ,uint64_t col,unsigned long win_size ){
+            uint64_t begin = 0;
+            uint64_t end = a->dimensions[0];
+            uint64_t it = begin;
+            float * W = 0;
+            float  sum = 0;
+            uint64_t  size = 0;
+            uint64_t  p = 0;
+
+
+            while( it != end){
+                float *v = (float*)PyArray_GETPTR2(a, it,col);
+                uint64_t  offset = ((char*)v) - a->data;
+                sum+= *v;
+                size = it - p + 1;
+                if( it -begin >=  win_size){
+                    size = win_size;
+                    v = (float*)PyArray_GETPTR2(a, p,col);
+                    sum -= *v;
+                    p++;
+                }else{
+                    W = (float*)PyArray_GETPTR2(b, it,col);
+                    W = (float*)(b->data + offset);
+                    *W = NAN;// sum /(float)size;  // expensive write cost
+                    it++;
+                    continue;
+                }
+                W = (float*)PyArray_GETPTR2(b, it,col);
+                *W =  sum /(float)size;  // expensive write cost
+                it++;
+            }
+        }
+
+        void __rolling_mean(PyArrayObject *a,PyArrayObject*b ,uint64_t col,unsigned long win_size ){
             uint64_t begin = 0;
             uint64_t end = a->dimensions[0];
             uint64_t it = begin;
@@ -236,6 +340,100 @@ namespace el {
             }
         }
 
+        float stdev(PyArrayObject *a,uint64_t col,float mean,uint64_t begin,uint64_t end,int bias=1){
+            float result = 0;
+            double sum = 0;
+            for(auto n=begin;n< end;n++){
+                float v = *(float *) PyArray_GETPTR2(a, n, col);
+                sum += (v - mean)*(v - mean);
+            }
+            result = std::sqrt( sum / (end - begin + bias) );
+            return result ;
+        }
+
+
+        void rolling_stdev(PyArrayObject *a,PyArrayObject*b ,uint64_t col,unsigned long win_size,int bias ){
+            uint64_t begin = 0;
+            uint64_t end = a->dimensions[0];
+            uint64_t it = begin;
+            float * W = 0;
+
+
+            RunningStat stat(win_size);
+//            printf("rolling_stdev() col:%lu ,it: %lu , end:%lu- --------------------\n",col,it,end);
+//            return ;
+            for( ;it < end; it++){
+                float v = *(float*)PyArray_GETPTR2(a, it,col);
+                stat.push(v);
+
+                if( it -begin >=  win_size){
+                    ;
+                }else{
+                    W = (float*)PyArray_GETPTR2(b, it,col);
+                    *W = NAN;// sum /(float)size;  // expensive write cost
+                    continue;
+                }
+
+//                printf(">A. it: %lu ,end: %lu ,col:%lu \n",it,end,col);
+                auto x = stat.get_std();
+                W = (float*)PyArray_GETPTR2(b, it,col);
+                *W = x;
+
+            }
+        }
+
+        void __rolling_stdev(PyArrayObject *a,PyArrayObject*b ,uint64_t col,unsigned long win_size,int bias ){
+            uint64_t begin = 0;
+            uint64_t end = a->dimensions[0];
+            uint64_t it = begin;
+            float * W = 0;
+            float  sum = 0;
+            uint64_t  size = 0;
+            uint64_t  p = 0;
+            boost::circular_buffer<float> mid_vals(win_size);
+            std::list<float> list_vals;
+            while( it != end){
+                float *v = (float*)PyArray_GETPTR2(a, it,col);
+                uint64_t  offset = ((char*)v) - a->data;
+                sum+= *v;
+                size = it - p + 1;
+                if( it -begin >=  win_size){
+                    size = win_size;
+                    v = (float*)PyArray_GETPTR2(a, p,col);
+
+                    p++;
+                }else{
+                    W = (float*)PyArray_GETPTR2(b, it,col);
+                    W = (float*)(b->data + offset);
+                    *W = NAN;// sum /(float)size;  // expensive write cost
+                    it++;
+//                    mid_vals.push_back(*v);
+                    continue;
+                }
+                W = (float*)PyArray_GETPTR2(b, it,col);
+//                *W =  sum /(float)size;  // expensive write cost
+                sum -= *v;
+                float mean = sum /(float)size;
+                float x = (*v  - mean) * (*v  - mean);
+//                mid_vals.push_back(x);
+
+//                if(list_vals.size()){
+//                    list_vals.pop_front();
+//                }
+//                list_vals.emplace_back(x);
+
+                double y = std::accumulate( mid_vals.begin(), mid_vals.end(), 0.0) / (mid_vals.size()+bias);
+                float R = std::sqrt(x);
+
+//                uint64_t s = it -win_size + 1;
+//                uint64_t e = it + 1;
+//                float R = stdev(a,col,mean,s,e,bias);
+
+                *W = R;
+                //-------------
+                it++;
+            }
+        }
 }
 
 

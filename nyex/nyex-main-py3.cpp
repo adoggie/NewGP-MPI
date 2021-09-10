@@ -8,26 +8,21 @@
 
 //https://cpp.hotexamples.com/zh/examples/-/-/PyArray_Zeros/cpp-pyarray_zeros-function-examples.html
 
-void * global_buff = NULL;
-npy_intp size[2] ;
 
-//extern "C" {
-//PyObject *
-//example(PyObject *dummy, PyObject *args);
-//}
 
  extern "C" PyObject*
-example (PyObject *dummy, PyObject *args)
+rolling_mean (PyObject *dummy, PyObject *args)
 {
     PyObject *arg1=NULL;
     PyObject *arg2=NULL; // win_size
     PyObject *arg3=NULL; // is parall
     uint64_t win_size = 0;
     uint64_t par=0 ;
+    npy_intp size[2] ;
 
     PyArrayObject *arr1=NULL;
     PyArrayObject *arr2=NULL;
-    int nd;
+//    int nd;
     printf("-- start .. \n");
 //    return PyLong_FromLong(111);
     // https://docs.python.org/zh-cn/3/c-api/arg.html#c.PyArg_Parse
@@ -81,8 +76,71 @@ example (PyObject *dummy, PyObject *args)
 
 }
 
+
+
+extern "C" PyObject*
+rolling_stdev (PyObject *dummy, PyObject *args){
+
+    PyObject *arg1=NULL;
+    PyObject *arg2=NULL; // win_size
+    PyObject *arg3=NULL; // is parall
+    uint64_t win_size = 0;
+    uint64_t par=0 ;
+    uint64_t bias=0 ;
+    npy_intp size[2] ;
+
+    PyArrayObject *arr1=NULL;
+    PyArrayObject *arr2=NULL;
+//    int nd;
+    printf("-- start .. \n");
+//    return PyLong_FromLong(111);
+    // https://docs.python.org/zh-cn/3/c-api/arg.html#c.PyArg_Parse
+//    if (!PyArg_ParseTuple(args, "OII", &arg1,&win_size,&par)) {
+    if (!PyArg_ParseTuple(args, "OIII", &arg1,&win_size,&par,&bias)) {
+        printf("ERROR: PyArg_ParseTuple Fail .\n");
+        return PyLong_FromLong(0);
+    }
+
+    printf("STEP.1 win_size:%lu, par:%lu ,bias: %lu\n", win_size,par,bias);
+//    return PyLong_FromLong(0);
+    printf("STEP.1\n");
+//    arr1 = PyArray_FROM_OTF(arg1, NPY_FLOAT, NPY_IN_ARRAY);
+    arr1 = (PyArrayObject*)PyArray_FROM_O(arg1);
+//    arr2 = PyArray_FROM_OTF(arg2, NPY_float, NPY_IN_ARRAY);
+    if (arr1 == NULL) {
+        printf("-- ERROR: arr1 is NULL .\n");
+        return PyLong_FromLong(0);
+    }
+
+    size[0] = arr1->dimensions[0];
+    size[1] = arr1->dimensions[1];
+//    printf("STEP.2\n");
+    PyArrayObject *ret;
+    ret = (PyArrayObject*)PyArray_SimpleNew(2,size,NPY_FLOAT);
+    printf("D1: %d , D2: %d , WIN:%d \n",(int)ret->dimensions[0],(int)ret->dimensions[1],(int)win_size);
+    PyArrayObject *a = arr1;
+    PyArrayObject *b = ret;
+//    printf("STEP.3\n");
+
+    if( par) {
+        std::vector<uint64_t> range(arr1->dimensions[1]);
+        std::iota(range.begin(), range.end(), 0);
+        std::for_each(std::execution::par_unseq, range.begin(), range.end(), [&](auto &n) {
+            el::rolling_stdev(a, b, n, win_size,bias);
+        });
+    }else {
+        for (int i = 0; i < arr1->dimensions[1]; ++i) {
+            el::rolling_stdev(a, b, i, win_size,bias);
+        }
+    }
+
+    return (PyObject*)ret;
+
+}
+
 static struct PyMethodDef methods[] = {
-        {"example", example, METH_VARARGS, "descript of example"},
+        {"rolling_mean", rolling_mean, METH_VARARGS, "descript of example"},
+        {"rolling_stdev", rolling_stdev, METH_VARARGS, "descript of example"},
         {NULL, NULL, 0, NULL}
 };
 
