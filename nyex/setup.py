@@ -5,9 +5,11 @@ from distutils.core import setup, Extension
 import numpy as np
 
 # https://blog.csdn.net/wuxianfeng1987/article/details/77175612
-ext_modules = [ Extension('nyex', sources = ['nyex-main-py3.cpp'] ,define_macros=[('NPY_NO_DEPRECATED_API','1')],
-                          libraries=['tbb'],library_dirs=['/usr/local/lib', '/usr/lib/x86_64-linux-gnu'],
-                          extra_compile_args=['-std=c++17']
+ext_modules = [ Extension('nyex2', sources = ['nyex-welford-py3.cpp'] ,define_macros=[('NPY_NO_DEPRECATED_API','1')],
+                          libraries=['tbb'],
+                          library_dirs=['/usr/local/lib', '/usr/lib/x86_64-linux-gnu'],
+                          extra_compile_args=['-std=c++17'],
+                          include_dirs = [np.get_include()],
                           ) ]
 # ext_modules = [ Extension('nyex', sources = ['nyexf-par-py3.c'] ,define_macros=[('NPY_NO_DEPRECATED_API','1')]) ]
 
@@ -21,7 +23,7 @@ ext_modules = [ Extension('nyex', sources = ['nyex-main-py3.cpp'] ,define_macros
 #                     sources = ['demo.c'])
 
 setup(
-    name = 'nyex',
+    name = 'nyex2',
     version = '1.0',
     include_dirs = [np.get_include()], #Add Include path of numpy
     ext_modules = ext_modules
