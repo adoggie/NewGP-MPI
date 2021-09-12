@@ -1,3 +1,5 @@
+#include "Python.h"
+#include "numpy/arrayobject.h"
 #include <numeric>
 #include <complex>
 #include <algorithm>
@@ -137,20 +139,27 @@ std::vector<double> roll_skew(std::vector<double> values,
     for ( i = 0; i < N; i++) {
         s = start[i];
         e = end[i];
+//        printf("i:%u s:%u e:%u start[i-1]:%u , end[i-1]:%u \n ",i,s,e,
+//               start[i-1],end[i-1]);
 
 //# Over the first window, observations can only be added
 //# never removed
 //if i == 0 or not is_monotonic_increasing_bounds:
         if (i == 0) {
+
             for ( j = s; j < e; j++) {
                 val = values_copy[j];
                 add_skew(val, &nobs, &x, &xx, &xxx, &compensation_x_add,
                          &compensation_xx_add, &compensation_xxx_add);
             }
+//            printf("i:%u s:%u e:%u , nobs:%d \n ",i,s,e,nobs);
         } else {
             //# After the first window, observations can both be added
             //# and removed
             //# calculate deletes
+
+//            printf("i:%u s:%u e:%u start[i-1]:%u , end[i-1]:%u \n ",i,s,e,
+//               start[i-1],end[i-1]);
             for ( j = start[i - 1]; j < s; j++) {
                 val = values_copy[j];
                 remove_skew(val, &nobs, &x, &xx, &xxx, &compensation_x_remove,
@@ -164,12 +173,93 @@ std::vector<double> roll_skew(std::vector<double> values,
                 add_skew(val, &nobs, &x, &xx, &xxx, &compensation_x_add,
                          &compensation_xx_add, &compensation_xxx_add);
             }
-
+            printf("i:%u s:%u e:%u , nobs:%d \n ",i,s,e,nobs);
         }
         output[i] = calc_skew(minp, nobs, x, xx, xxx);
     }
 
     return output;
+}
+
+
+void roll_skew2(
+        PyArrayObject *in,PyArrayObject *out,uint64_t col,
+                              int64_t minp) {
+    std::size_t rows = in->dimensions[0];
+
+
+    int64_t i, j;
+    double val, prev, min_val, mean_val, sum_val = 0;
+    double compensation_xxx_add = 0, compensation_xxx_remove = 0;
+    double compensation_xx_add = 0, compensation_xx_remove = 0;
+    double compensation_x_add = 0, compensation_x_remove = 0;
+    double x = 0, xx = 0, xxx = 0;
+    int64_t nobs = 0, N = in->dimensions[0], nobs_mean = 0;
+    int64_t s, e;
+    std::vector<double>  values_copy(N);
+    minp = fmax(minp, 3); // winsize
+    min_val = 1e+10;
+    for(std::size_t n=0 ; n< N; n++){
+        float v = *(float *) PyArray_GETPTR2(in, n, col);
+        min_val = fmin(v,min_val);
+        values_copy[n] = v;
+        nobs_mean += 1;
+        sum_val += v;
+    }
+    mean_val = sum_val / nobs_mean;
+//    printf(" mean_val:%f col:%u \n",mean_val,col);
+
+//# Other cases would lead to imprecision for smallest values
+    if (min_val - mean_val > -1e5) {
+        mean_val = std::round(mean_val);
+        for ( i = 0; i < N; i++) {
+            values_copy[i] = values_copy[i] - mean_val;
+        }
+    }
+
+    for ( i = 0; i < N; i++) {
+        s = 0;
+        if( i >= minp ){
+            s = i - minp+1;
+        }
+//        e = end[i];
+        e = i + 1;
+//        printf("i:%u s:%u e:%u start[i-1]:%u , end[i-1]:%u \n ",i,s,e,
+//               s-1,e-1);
+        if (i == 0) {
+            for ( j = s; j < e; j++) {
+                val = values_copy[j];
+                add_skew(val, &nobs, &x, &xx, &xxx, &compensation_x_add,
+                         &compensation_xx_add, &compensation_xxx_add);
+            }
+        } else {
+            //# After the first window, observations can both be added
+            //# and removed
+            //# calculate deletes
+//            for ( j = start[i - 1]; j < s; j++) {
+            for ( j = (0>s-1?0:s-1); j < s; j++) {
+                val = values_copy[j];
+                remove_skew(val, &nobs, &x, &xx, &xxx, &compensation_x_remove,
+                            &compensation_xx_remove, &compensation_xxx_remove);
+            }
+
+            //# calculate adds
+            //for j in range(end[i - 1], e):
+//            for ( j = end[i - 1]; j < e; j++) {
+            for ( j = e-1; j < e; j++) {
+                val = values_copy[j];
+                add_skew(val, &nobs, &x, &xx, &xxx, &compensation_x_add,
+                         &compensation_xx_add, &compensation_xxx_add);
+            }
+
+        }
+        float* v = (float *) PyArray_GETPTR2(out, i, col);
+        *v = calc_skew(minp, nobs, x, xx, xxx);
+//        printf("minp:%d,nobs:%d,x:%f,xx:%f,xxx:%f, v:%f col:%u  s:%d , e:%d \n",
+//               minp,nobs,x,xx,xxx,
+//               *v,col,s,e);
+    }
+
 }
 
 int main(int ,char**){

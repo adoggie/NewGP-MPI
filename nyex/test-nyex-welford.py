@@ -33,7 +33,7 @@ def test_par(winsize=100,loop=1):
     start = time.time()
     for _ in range(loop):
         # ret = df.rolling(winsize).mean()
-        ret = df.rolling(winsize).kurt()
+        ret = df.rolling(winsize).skew()
     end = time.time()
     print('test_par elapsed:', end - start)
     # print ret.values,ret.shape
@@ -49,7 +49,8 @@ def test_nyex(winsize=100,par=0,loop=1):
     start = time.time()
     for _ in range(loop):
         # ret =nyex.rolling_mean( arr,winsize,par )
-        ret =nyex2.rolling_std( arr,winsize,par )
+        # ret =nyex2.rolling_std( arr,winsize,par )
+        ret =nyex2.rolling_skew( arr,winsize,par )
     end = time.time()
     print('test_nyex elapsed:', end - start)
     # print(ret,ret.shape)

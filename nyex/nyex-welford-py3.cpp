@@ -113,11 +113,20 @@ std::vector<double> roll_skew(std::vector<double> values,
                               std::vector<int64_t> start,
                               std::vector<int64_t> end,
                               int64_t minp);
+void roll_skew2(
+        PyArrayObject *in,PyArrayObject *out,uint64_t col,
+        int64_t minp);
+
 void _rolling_skew(PyArrayObject *in, PyArrayObject *out, uint64_t col, unsigned long win_size) {
+    roll_skew2(in,out,col,win_size);
+}
+
+void _rolling_skew2(PyArrayObject *in, PyArrayObject *out, uint64_t col, unsigned long win_size) {
     std::size_t rows = in->dimensions[0];
     std::vector<double> result,input(rows);
     std::vector<int64_t> end(rows);
     std::vector<int64_t> start(rows);
+//    printf("_rolling_skew() rows:%u \n",rows);
     for(std::size_t n=0;n<rows; n++){
         end[n] = n+1;
         if(n<win_size){
@@ -127,21 +136,20 @@ void _rolling_skew(PyArrayObject *in, PyArrayObject *out, uint64_t col, unsigned
         }
         float v = *(float *) PyArray_GETPTR2(in, n, col);
         input[n] = v ;
+//        printf("%u ",end[n]);
     }
 
     result = roll_skew(input,start,end,win_size);
     for(std::size_t n=0;n< rows; n++) {
-        float* v = (float *) PyArray_GETPTR2(in, n, col);
+        float* v = (float *) PyArray_GETPTR2(out, n, col);
         *v = (float)result[n];
     }
-
-
 }
 
 void rolling_kurt(PyArrayObject *in, PyArrayObject *out, uint64_t col, unsigned long win_size) {
 }
 
-extern "C" PyObject *
+PyObject *
 rolling_xxx(PyObject *dummy, PyObject *args,RollType rt) {
     PyObject *arg1 = NULL;
     uint64_t win_size = 0;
@@ -181,6 +189,7 @@ rolling_xxx(PyObject *dummy, PyObject *args,RollType rt) {
 //            });
     } else {
         for (uint32_t i = 0; i < arr1->dimensions[1]; ++i) {
+//            printf("call rt:%d \n",rt);
             if(RollType::SKEW == rt){
                 _rolling_skew(a,b,i,win_size);
             }else {
@@ -208,6 +217,7 @@ rolling_var(PyObject *dummy, PyObject *args) {
 
 extern "C" PyObject *
 rolling_skew(PyObject *dummy, PyObject *args) {
+    printf(" in rolling_skew : %d \n",RollType::SKEW );
     return (PyObject *) rolling_xxx(dummy,args,RollType::SKEW);
 }
 
@@ -220,8 +230,8 @@ static struct PyMethodDef methods[] = {
         {"rolling_mean",  rolling_mean,  METH_VARARGS, "descript of example"},
         {"rolling_std", rolling_std, METH_VARARGS, "descript of example"},
         {"rolling_var", rolling_var, METH_VARARGS, "descript of example"},
-        {"rolling_skew", rolling_var, METH_VARARGS, "descript of example"},
-        {"rolling_kurt", rolling_var, METH_VARARGS, "descript of example"},
+        {"rolling_skew", rolling_skew, METH_VARARGS, "descript of example"},
+        {"rolling_kurt", rolling_kurt, METH_VARARGS, "descript of example"},
         {NULL,            NULL,          0,            NULL}
 };
 
