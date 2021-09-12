@@ -5,7 +5,7 @@ from distutils.core import setup, Extension
 import numpy as np
 
 # https://blog.csdn.net/wuxianfeng1987/article/details/77175612
-ext_modules = [ Extension('nyex2', sources = ['nyex-welford-py3.cpp'] ,define_macros=[('NPY_NO_DEPRECATED_API','1')],
+ext_modules = [ Extension('nyex2', sources = ['nyex-welford-py3.cpp','skew_kurt.cpp'] ,define_macros=[('NPY_NO_DEPRECATED_API','1')],
                           libraries=['tbb'],
                           library_dirs=['/usr/local/lib', '/usr/lib/x86_64-linux-gnu'],
                           extra_compile_args=['-std=c++17'],

@@ -33,7 +33,7 @@ def test_par(winsize=100,loop=1):
     start = time.time()
     for _ in range(loop):
         # ret = df.rolling(winsize).mean()
-        ret = df.rolling(winsize).std()
+        ret = df.rolling(winsize).kurt()
     end = time.time()
     print('test_par elapsed:', end - start)
     # print ret.values,ret.shape
