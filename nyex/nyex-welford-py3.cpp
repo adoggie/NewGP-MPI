@@ -9,17 +9,32 @@
 #include <list>
 #include <utility>
 #include <boost/circular_buffer.hpp>
-//#include <execution>
+#include <execution>
 
 
 //https://cpp.hotexamples.com/zh/examples/-/-/PyArray_Zeros/cpp-pyarray_zeros-function-examples.html
+
+void apply_tsrank(PyArrayObject *in,PyArrayObject *out,uint64_t col,int64_t minp) ;
+std::vector<double> roll_skew(std::vector<double> values,
+                              std::vector<int64_t> start,
+                              std::vector<int64_t> end,
+                              int64_t minp);
+void roll_skew2(
+        PyArrayObject *in,PyArrayObject *out,uint64_t col,
+        int64_t minp);
+
+void _rolling_skew(PyArrayObject *in, PyArrayObject *out, uint64_t col, unsigned long win_size) {
+    roll_skew2(in,out,col,win_size);
+}
+
 
 enum class RollType {
     MEAN,
     VAR,
     STD,
     SKEW,
-    KURT
+    KURT,
+    TSRANK
 };
 
 //template<typename T>
@@ -109,17 +124,6 @@ void rolling_welford(PyArrayObject *in, PyArrayObject *out, uint64_t col, unsign
 73  74  75  76  77  78  79  80  81  82  83  84  85  86  87  88  89  90
 91  92  93  94  95  96  97  98  99 100]
  */
-std::vector<double> roll_skew(std::vector<double> values,
-                              std::vector<int64_t> start,
-                              std::vector<int64_t> end,
-                              int64_t minp);
-void roll_skew2(
-        PyArrayObject *in,PyArrayObject *out,uint64_t col,
-        int64_t minp);
-
-void _rolling_skew(PyArrayObject *in, PyArrayObject *out, uint64_t col, unsigned long win_size) {
-    roll_skew2(in,out,col,win_size);
-}
 
 void _rolling_skew2(PyArrayObject *in, PyArrayObject *out, uint64_t col, unsigned long win_size) {
     std::size_t rows = in->dimensions[0];
@@ -148,6 +152,10 @@ void _rolling_skew2(PyArrayObject *in, PyArrayObject *out, uint64_t col, unsigne
 
 void rolling_kurt(PyArrayObject *in, PyArrayObject *out, uint64_t col, unsigned long win_size) {
 }
+
+void rolling_tsrank(PyArrayObject *in, PyArrayObject *out, uint64_t col, unsigned long win_size) {
+}
+
 
 PyObject *
 rolling_xxx(PyObject *dummy, PyObject *args,RollType rt) {
@@ -184,19 +192,38 @@ rolling_xxx(PyObject *dummy, PyObject *args,RollType rt) {
     if (par) {
         std::vector <uint64_t> range(arr1->dimensions[1]);
         std::iota(range.begin(), range.end(), 0);
-//            std::for_each(std::execution::par_unseq, range.begin(), range.end(), [&](auto &n) {
-//                el::rolling_mean(a, b, n, win_size);
-//            });
-    } else {
-        for (uint32_t i = 0; i < arr1->dimensions[1]; ++i) {
+        switch (rt) {
+            case RollType::SKEW :
+                std::for_each(std::execution::par_unseq, range.begin(), range.end(), [&](auto &n) {
+                    _rolling_skew(a, b, n, win_size);
+                });
+                break;
+            case RollType::TSRANK:
+                std::for_each(std::execution::par_unseq, range.begin(), range.end(), [&](auto &n) {
+                    apply_tsrank(a, b, n, win_size);
+                });
+            default:
+                std::for_each(std::execution::par_unseq, range.begin(), range.end(), [&](auto &n) {
+                    rolling_welford(a, b, n, win_size, rt);
+                });
+        }
+        return (PyObject *) ret;
+    }
+
+    for (uint32_t i = 0; i < arr1->dimensions[1]; ++i) {
 //            printf("call rt:%d \n",rt);
-            if(RollType::SKEW == rt){
+        switch (rt) {
+            case RollType::SKEW:
                 _rolling_skew(a,b,i,win_size);
-            }else {
+                break;
+            case RollType::TSRANK:
+                apply_tsrank(a,b,i,win_size);
+                break;
+            default:
                 rolling_welford(a, b, i, win_size, rt);
-            }
         }
     }
+
     return (PyObject *) ret;
 }
 
@@ -226,12 +253,18 @@ rolling_kurt(PyObject *dummy, PyObject *args) {
     return (PyObject *) rolling_xxx(dummy,args,RollType::KURT);
 }
 
+extern "C" PyObject *
+rolling_tsrank(PyObject *dummy, PyObject *args) {
+    return (PyObject *) rolling_xxx(dummy,args,RollType::TSRANK);
+}
+
 static struct PyMethodDef methods[] = {
         {"rolling_mean",  rolling_mean,  METH_VARARGS, "descript of example"},
         {"rolling_std", rolling_std, METH_VARARGS, "descript of example"},
         {"rolling_var", rolling_var, METH_VARARGS, "descript of example"},
         {"rolling_skew", rolling_skew, METH_VARARGS, "descript of example"},
         {"rolling_kurt", rolling_kurt, METH_VARARGS, "descript of example"},
+        {"rolling_tsrank", rolling_tsrank, METH_VARARGS, "descript of example"},
         {NULL,            NULL,          0,            NULL}
 };
 
